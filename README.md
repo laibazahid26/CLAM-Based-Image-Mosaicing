@@ -5,6 +5,7 @@ I have uploaded two py files. One is called StitchDesktop.py and the other is ca
 <br />
 Whereas, the second py file, 'Stitch.py' uses the rosbag data to build a panorama. 
 
+###  Running Instructions
 It is suggested to run first StitchDesktop.py file for having a look at the code and analyzing the problems in the resultant panaorama. This file can simply be run by typing: <br />
 `./StitchDesktop.py`
 
