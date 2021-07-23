@@ -26,12 +26,15 @@ def imagePreprocessing():
     
     global img1, img2, img3, images
     images = []
-
+    
     img1 = cv2.imread("city_01.jpg")
     img2 = cv2.imread("city_02.jpg")
     img3 = cv2.imread("city_03.jpg")
-    #img4 = cv2.imread("city_04.jpg")
+    img4 = cv2.imread("city_04.jpg")
     img5 = cv2.imread("city_05.jpg")
+    img6 = cv2.imread("city_06.jpg")
+    img7 = cv2.imread("city_07.jpg")
+    img8 = cv2.imread("city_08.jpg")
   
     scale_percent = 40
 
@@ -40,17 +43,24 @@ def imagePreprocessing():
 
     dsize = (width, height)
 
-    #img1 = cv2.resize(img1, dsize)
-    #img2 = cv2.resize(img2, dsize)
-    #img3 = cv2.resize(img3, dsize)
-    #img4 = cv2.resize(img4, dsize)
-    #img5 = cv2.resize(img5, dsize)
+    img1 = cv2.resize(img1, dsize)
+    img2 = cv2.resize(img2, dsize)
+    img3 = cv2.resize(img3, dsize)
+    img4 = cv2.resize(img4, dsize)
+    img5 = cv2.resize(img5, dsize)
+    img6 = cv2.resize(img6, dsize)
+    img7 = cv2.resize(img7, dsize)
+    img8 = cv2.resize(img8, dsize)
    
     images.append(img1)
     images.append(img2)
     images.append(img3)
-    #images.append(img4)
+    images.append(img4)
     images.append(img5)
+    images.append(img6)
+    images.append(img7)
+    images.append(img8)
+
   
     return images
 
@@ -126,7 +136,7 @@ def main():
     result = images[0]
     preserve_M = np.identity(3)
 
-    for i in range(0, 3): #len(images)-1):
+    for i in range(0, len(images)-1):
        keypoints1, keypoints2, matches = findMatches(result, images[i+1])
        goodMatches = findGoodMatches(matches)
        M = Homography(result, images[i+1], keypoints1, keypoints2, goodMatches)
