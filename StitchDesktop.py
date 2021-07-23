@@ -61,7 +61,6 @@ def imagePreprocessing():
     images.append(img7)
     images.append(img8)
 
-  
     return images
 
 
@@ -73,7 +72,6 @@ def findMatches(img1, img2):
     orb = cv2.ORB_create(nfeatures = 1500)
     keypoints1, descriptors1 = orb.detectAndCompute(img1, None)
     keypoints2, descriptors2 = orb.detectAndCompute(img2, None)
-
     
     bf = cv2.BFMatcher_create(cv2.NORM_HAMMING)
     matches = bf.knnMatch(descriptors1, descriptors2,k=2)
@@ -85,25 +83,19 @@ def findGoodMatches(matches):
 
     good = []
     for m, n in matches:
-       if m.distance < 0.6 * n.distance:
+       if m.distance < 0.5 * n.distance:
           good.append(m)
 
     return good
 
 
 def Homography(img1, img2, keypoints1, keypoints2, goodMatches):
-    
-    MIN_MATCH_COUNT = 10
-
-    #result = img1
-    #if len(goodMatches) > MIN_MATCH_COUNT:
 
     dst_pts = np.float32([ keypoints1[m.queryIdx].pt for m in goodMatches]).reshape(-1,1,2)
     src_pts = np.float32([ keypoints2[m.trainIdx].pt for m in goodMatches]).reshape(-1,1,2)
     M, _ = cv2.findHomography(src_pts, dst_pts, cv2.RHO, 5.0)
 
     print "M: ", M 
-
     return M
     
 
@@ -114,7 +106,6 @@ def warpTwoImages(img1, img2, H):
 
     pts1 = np.float32([[0,0], [0, rows1],[cols1, rows1], [cols1, 0]]).reshape(-1, 1, 2)
     pts2_temp = np.float32([[0,0], [0,rows2], [cols2,rows2], [cols2,0]]).reshape(-1,1,2)
-
 
     pts2 = cv2.perspectiveTransform(pts2_temp, H)
 
@@ -134,14 +125,15 @@ def main():
     images = imagePreprocessing()
 
     result = images[0]
-    preserve_M = np.identity(3)
+    #preserve_M = np.identity(3)
 
     for i in range(0, len(images)-1):
        keypoints1, keypoints2, matches = findMatches(result, images[i+1])
        goodMatches = findGoodMatches(matches)
-       M = Homography(result, images[i+1], keypoints1, keypoints2, goodMatches)
-       #preserve_M = preserve_M.dot(M) 
-       result = warpTwoImages(result, images[i+1], M)
+       if len(goodMatches) >= 10:
+          M = Homography(result, images[i+1], keypoints1, keypoints2, goodMatches)
+          #preserve_M = preserve_M.dot(M) 
+          result = warpTwoImages(result, images[i+1], M)
 
     cv2.imshow('window', result)
     cv2.waitKey(0)

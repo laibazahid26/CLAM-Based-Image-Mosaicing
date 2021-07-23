@@ -2,6 +2,7 @@
 
 # Python libs
 import time
+import struct
 
 # numpy and scipy
 import numpy as np
@@ -69,16 +70,13 @@ def findGoodMatches(matches):
 
     good = []
     for m, n in matches:
-       if m.distance < 0.6 * n.distance:
+       if m.distance < 0.5 * n.distance:
           good.append(m)
 
     return good
 
 
 def findHomography(img1, img2, keypoints1, keypoints2, goodMatches):
-    
-    #MIN_MATCH_COUNT = 10
-    #if len(goodMatches) > MIN_MATCH_COUNT:
 
     dst_pts = np.float32([ keypoints1[m.queryIdx].pt for m in goodMatches]).reshape(-1,1,2)
     src_pts = np.float32([ keypoints2[m.trainIdx].pt for m in goodMatches]).reshape(-1,1,2)
@@ -127,18 +125,20 @@ def main():
     imagePreprocessing()
 
     result = images[0]
-    preserve_M = np.identity(3)
+    #preserve_M = np.identity(3)
 
     print "length of images: ", len(images)
  
     #for i in range(0, len(images)-1, 10):
-    for i in range(0, 200, 2):
+    version = struct.calcsize("P")*8 
+    print(version)
+    for i in range(0, 100, 2):
        keypoints1, keypoints2, matches = findMatches(result, images[i+1])
        goodMatches = findGoodMatches(matches) 
-       if len(goodMatches) >= 4:
+       if len(goodMatches) >= 10:
           print i
           M = findHomography(result, images[i+1], keypoints1, keypoints2, goodMatches)
-          preserve_M = preserve_M.dot(M) 
+          #preserve_M = preserve_M.dot(M) 
           result = warpTwoImages(result, images[i+1], M)
 
     cv2.imshow('window', result)
