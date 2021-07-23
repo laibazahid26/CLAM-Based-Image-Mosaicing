@@ -35,7 +35,9 @@ def imagePreprocessing():
     img6 = cv2.imread("city_06.jpg")
     img7 = cv2.imread("city_07.jpg")
     img8 = cv2.imread("city_08.jpg")
-  
+    
+    print "hello world"
+
     scale_percent = 40
 
     width = int(img1.shape[1] * scale_percent / 100)
