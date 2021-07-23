@@ -20,3 +20,4 @@ Open second terminal and type: <br />
 `rosbag play MH_01_easy.bag --start 45`
 
 Stop the rosbag by pressing ctrl-C after 20 to 25 seconds (because we are testing only). 
+Also, one important thing is that I am having memory issues in my code (Stitch.py), if I run it for more than 50 images. 
