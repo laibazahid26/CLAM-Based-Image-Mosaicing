@@ -66,14 +66,11 @@ def imagePreprocessing():
 
 def findMatches(img1, img2):
     
-    global keypoints1, keypoints2, descriptors1, descriptors2, matches
     global orb, bf 
 
-    orb = cv2.ORB_create(nfeatures = 1500)
     keypoints1, descriptors1 = orb.detectAndCompute(img1, None)
     keypoints2, descriptors2 = orb.detectAndCompute(img2, None)
     
-    bf = cv2.BFMatcher_create(cv2.NORM_HAMMING)
     matches = bf.knnMatch(descriptors1, descriptors2,k=2)
 
     return keypoints1, keypoints2, matches
@@ -122,6 +119,11 @@ def warpTwoImages(img1, img2, H):
 
 def main():
    
+    global orb, bf
+
+    orb = cv2.ORB_create(nfeatures = 1500)
+    bf = cv2.BFMatcher_create(cv2.NORM_HAMMING)
+
     images = imagePreprocessing()
 
     result = images[0]
