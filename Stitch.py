@@ -39,20 +39,19 @@ def imageCallback(image):
 def imagePreprocessing():
     
     global images
-    time.sleep(10)
-    allImages = []
+    time.sleep(30)
     
-    firstTen = images[0:10]
+    allImages = []
+    print "total raw images: ", len(images)
+    firstTen = images[0:60]
 
     print len(firstTen)
-    dsize = (100, 100)
+    dsize = (300, 300)
      
-    for i in range (0, len(firstTen)):
+    for i in range (0, len(firstTen), 2):
        img = cv2.resize(firstTen[i], dsize)
        allImages.append(img)
     
-    a = allImages[0].shape
-    print a
     return allImages
 
 
@@ -84,7 +83,7 @@ def Homography(keypoints1, keypoints2, goodMatches):
     src_pts = np.float32([ keypoints2[m.trainIdx].pt for m in goodMatches]).reshape(-1,1,2)
     M, _ = cv2.findHomography(src_pts, dst_pts, cv2.RHO, 5.0)
     
-    print M 
+    #print M 
     return M
     
 def warpTwoImages(img1, img2, prev_H):
@@ -125,23 +124,19 @@ def main():
     for i in range(middle_image, 0, -1):
        prev_H, warpedImage = warpTwoImages(allImages[i], allImages[i-1], prev_H)
        allWarpedImages[i-1] = warpedImage
-       cv2.imwrite('/root/Desktop/thesis/' + str(i-1) + '.png', allWarpedImages[i-1])
+       #cv2.imwrite('/root/Desktop/thesis/' + str(i-1) + '.png', allWarpedImages[i-1])
 
     prev_H = offsetMatrix.copy()
     prev_H, warpedImage = warpTwoImages(allImages[middle_image], allImages[middle_image], prev_H)
     allWarpedImages[middle_image] = warpedImage
-    cv2.imwrite('/root/Desktop/thesis/' + str(middle_image) + '.png', allWarpedImages[middle_image])
+    #cv2.imwrite('/root/Desktop/thesis/' + str(middle_image) + '.png', allWarpedImages[middle_image])
     
     prev_H = offsetMatrix.copy()
     for j in range(middle_image+1, len(allImages)):
        prev_H, warpedImage = warpTwoImages(allImages[j-1], allImages[j], prev_H)
        allWarpedImages[j] = warpedImage
-       cv2.imwrite('/root/Desktop/thesis/' + str(j) + '.png', allWarpedImages[j])
+       #cv2.imwrite('/root/Desktop/thesis/' + str(j) + '.png', allWarpedImages[j])
 
-#    for index in range(0, len(allWarpedImages)):
-#       cv2.imshow("allWarpedImages", allWarpedImages[index])
-#       cv2.waitKey(0)
-#       cv2.destroyAllWindows()
 
     finalImg = allWarpedImages[0]
     b = Blender() 

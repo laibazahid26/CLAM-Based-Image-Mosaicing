@@ -138,9 +138,9 @@ def main():
         finalImg, mask1truth, mask2truth = b.blend(finalImg, allWarpedImages[index])
         mask1truth = mask1truth + mask2truth
         cv2.imwrite('/root/Desktop/thesis/FINALBLENDED.png', finalImg)
-    #cv2.imshow('Final Image', finalImg)
-    #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
+        #cv2.imshow('Final Image', finalImg)
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
