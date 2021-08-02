@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Python libs
-from blending import Blender
+from blendingStitchDesktop import Blender
 import math
 
 # numpy and scipy

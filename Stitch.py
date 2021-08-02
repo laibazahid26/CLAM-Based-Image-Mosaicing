@@ -3,7 +3,7 @@
 # Python libs
 import time
 import math
-from blending import Blender
+from blendingStitch import Blender
 
 
 # numpy and scipy
@@ -42,15 +42,17 @@ def imagePreprocessing():
     time.sleep(10)
     allImages = []
     
-    allImages = images[0:5]
+    firstTen = images[0:10]
+
+    print len(firstTen)
     dsize = (100, 100)
      
-    for i in range (0, len(allImages)):
-       img = cv2.resize(allImages[i], dsize)
+    for i in range (0, len(firstTen)):
+       img = cv2.resize(firstTen[i], dsize)
        allImages.append(img)
-
-
-    print len(allImages)
+    
+    a = allImages[0].shape
+    print a
     return allImages
 
 
@@ -87,7 +89,7 @@ def Homography(keypoints1, keypoints2, goodMatches):
     
 def warpTwoImages(img1, img2, prev_H):
     
-    warpedImage = np.zeros((2000, 2000, 3))
+    warpedImage = np.zeros((2000, 2000))
 
     keypoints1, keypoints2, matches = findMatches(img1, img2)
     goodMatches = findGoodMatches(matches)
@@ -110,7 +112,7 @@ def main():
 
     allImages = imagePreprocessing()
 
-    allWarpedImages = [np.zeros((2000, 2000, 3))]* len(allImages)
+    allWarpedImages = [np.zeros((2000, 2000))]* len(allImages)
 
 
     offset = [1000, 500]
@@ -136,11 +138,15 @@ def main():
        allWarpedImages[j] = warpedImage
        cv2.imwrite('/root/Desktop/thesis/' + str(j) + '.png', allWarpedImages[j])
 
+#    for index in range(0, len(allWarpedImages)):
+#       cv2.imshow("allWarpedImages", allWarpedImages[index])
+#       cv2.waitKey(0)
+#       cv2.destroyAllWindows()
 
     finalImg = allWarpedImages[0]
     b = Blender() 
     
-    for index in range(1, len(allImages)):
+    for index in range(1, len(allWarpedImages)):
         print('blending', index)
         finalImg, mask1truth, mask2truth = b.blend(finalImg, allWarpedImages[index])
         mask1truth = mask1truth + mask2truth

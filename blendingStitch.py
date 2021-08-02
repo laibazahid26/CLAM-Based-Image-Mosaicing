@@ -37,7 +37,8 @@ class Blender():
         # since the boundary of the mask changes at each downscaling, we need to get the pyramid for the mask as well
         pyra = []
         for i, mask in enumerate(gpm):
-            maskNet = cv2.merge((mask, mask, mask))
+            #maskNet = cv2.merge((mask, mask, mask))
+            maskNet = mask
             blended = lpa[i]*maskNet + lpb[i]*(1 - maskNet)
             pyra.append(blended)
         
@@ -58,11 +59,13 @@ class Blender():
     def getMask(self, img):
         # gets the mask of a particular image. Simply a helper function
 
-        mask = img[:, :, 0] != 0 
-        mask = np.logical_and(img[:, :, 1] != 0, mask)
-        mask = np.logical_and(img[:, :, 2] != 0, mask)
+        #mask = img[:, :, 0] != 0
+        mask = img[:, :] != 0 
+        #mask = np.logical_and(img[:, :, 1] != 0, mask)
+        #mask = np.logical_and(img[:, :, 2] != 0, mask)
 
-        maskImg  = np.zeros(img.shape[:2], dtype = float)
+        #maskImg  = np.zeros(img.shape[:2], dtype = float)
+        maskImg  = np.zeros(img.shape[:], dtype = float)
         maskImg[mask] = 1.0
         return maskImg, mask
 
