@@ -27,7 +27,7 @@ def imagePreprocessing():
     img7 = cv2.imread("city_07.jpg")
     img8 = cv2.imread("city_08.jpg")
 
-    dsize = (400,400)
+    dsize = (300,300)
 
     img1 = cv2.resize(img1, dsize)
     img2 = cv2.resize(img2, dsize)
@@ -56,7 +56,6 @@ def findMatches(img1, img2):
 
     keypoints1, descriptors1 = orb.detectAndCompute(img1, None)
     keypoints2, descriptors2 = orb.detectAndCompute(img2, None)
-    
     matches = bf.knnMatch(descriptors1, descriptors2, k=2)
 
     return keypoints1, keypoints2, matches
@@ -83,8 +82,7 @@ def Homography(keypoints1, keypoints2, goodMatches):
 
 def warpTwoImages(img1, img2, prev_H):
     
-    warpedImage = np.zeros((4000, 4000, 3))
-
+    warpedImage = np.zeros((3000, 3000, 3))
     keypoints1, keypoints2, matches = findMatches(img1, img2)
     goodMatches = findGoodMatches(matches)
     H = Homography(keypoints1, keypoints2, goodMatches)
@@ -93,55 +91,63 @@ def warpTwoImages(img1, img2, prev_H):
 
     return prev_H, warpedImage
 
+def warpEachSubArray(array):
 
-def main():
-   
-    global orb, bf, allWarpedImages
-    
+    global allWarpedImages
 
-    orb = cv2.ORB_create(nfeatures = 1500)
-    bf = cv2.BFMatcher_create(cv2.NORM_HAMMING)
-   
-
-    images = imagePreprocessing()
-    allWarpedImages = [np.zeros((4000, 4000, 3))]* len(images)
-
+    warpedImages = [None]*len(array)
 
     offset = [1000, 500]
     offsetMatrix = np.array([[1, 0, offset[0]], [0, 1, offset[1]], [0, 0, 1]])
 
-    middle_image = int(math.ceil(len(images)/2))
+    middle_image = int(math.ceil(len(array)/2))
+    print("middle_image: ", middle_image)
 
     prev_H = offsetMatrix.copy()
     for i in range(middle_image, 0, -1):
-       prev_H, warpedImage = warpTwoImages(images[i], images[i-1], prev_H)
-       allWarpedImages[i-1] = warpedImage
-       cv2.imwrite('/root/Desktop/thesis/' + str(i-1) + '.png', allWarpedImages[i-1])
+       prev_H, warpedImage = warpTwoImages(array[i], array[i-1], prev_H)
+       warpedImages[i-1] = warpedImage
+       #cv2.imwrite('/root/Desktop/thesis/' + str(i-1) + '.png', warpedImages[i-1])
 
     prev_H = offsetMatrix.copy()
-    prev_H, warpedImage = warpTwoImages(images[middle_image], images[middle_image], prev_H)
-    allWarpedImages[middle_image] = warpedImage
-    cv2.imwrite('/root/Desktop/thesis/' + str(middle_image) + '.png', allWarpedImages[middle_image])
+    prev_H, warpedImage = warpTwoImages(array[middle_image], array[middle_image], prev_H)
+    warpedImages[middle_image] = warpedImage
+    #cv2.imwrite('/root/Desktop/thesis/' + str(middle_image) + '.png', warpedImages[middle_image])
     
     prev_H = offsetMatrix.copy()
-    for j in range(middle_image+1, len(images)):
-       prev_H, warpedImage = warpTwoImages(images[j-1], images[j], prev_H)
-       allWarpedImages[j] = warpedImage
-       cv2.imwrite('/root/Desktop/thesis/' + str(j) + '.png', allWarpedImages[j])
+    for j in range(middle_image+1, len(array)):
+       prev_H, warpedImage = warpTwoImages(array[j-1], array[j], prev_H)
+       warpedImages[j] = warpedImage
+       #cv2.imwrite('/root/Desktop/thesis/' + str(j) + '.png', warpedImages[j])
 
+    print("length of warped images: ", len(warpedImages))
+    
+#    iterator = 0
+#    for i in range(0, len(allWarpedImages)):
+#       for j in range(0, len(allWarpedImages[i])):
+#          cv2.imwrite('/root/Desktop/thesis/' + str(iterator) + '.png', allWarpedImages[i][j])
+#          iterator +=1
 
-    finalImg = allWarpedImages[0]
+    return warpedImages
+
+def main():
+   
+    global orb, bf
+
+    orb = cv2.ORB_create(nfeatures = 1500)
+    bf = cv2.BFMatcher_create(cv2.NORM_HAMMING)
+   
+    images = imagePreprocessing()
+    warpedImages = warpEachSubArray(images)
+
+    finalImg = warpedImages[0]
     b = Blender() 
     
-    for index in range(1, len(images)):
-        print('blending', index)
-        finalImg, mask1truth, mask2truth = b.blend(finalImg, allWarpedImages[index])
-        mask1truth = mask1truth + mask2truth
-        cv2.imwrite('/root/Desktop/thesis/FINALBLENDED.png', finalImg)
-        #cv2.imshow('Final Image', finalImg)
-        #cv2.waitKey(0)
-        #cv2.destroyAllWindows()
-
+    for i in range(1, len(warpedImages)):
+       print('blending', i)
+       finalImg, mask1truth, mask2truth = b.blend(finalImg, warpedImages[i])
+       cv2.imwrite('/root/Desktop/thesis' + 'final.png', finalImg)
+    
 
 if __name__ == '__main__':
     main()

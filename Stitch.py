@@ -5,7 +5,6 @@ import time
 import math
 from blendingStitch import Blender
 
-
 # numpy and scipy
 import numpy as np
 from numpy import float32, int32
@@ -23,7 +22,9 @@ import rospy
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 
+
 images = []
+
 
 def imageCallback(image):
     
@@ -39,17 +40,16 @@ def imageCallback(image):
 def imagePreprocessing():
     
     global images
-    time.sleep(30)
+    time.sleep(15)
     
     allImages = []
     print "total raw images: ", len(images)
-    firstTen = images[0:60]
-
-    print len(firstTen)
-    dsize = (300, 300)
+    
+    extracted = images[0:100]
+    dsize = (450, 750)
      
-    for i in range (0, len(firstTen), 2):
-       img = cv2.resize(firstTen[i], dsize)
+    for i in range (0, len(extracted), 2):
+       img = cv2.resize(extracted[i], dsize)
        allImages.append(img)
     
     return allImages
@@ -61,7 +61,6 @@ def findMatches(img1, img2):
 
     keypoints1, descriptors1 = orb.detectAndCompute(img1, None)
     keypoints2, descriptors2 = orb.detectAndCompute(img2, None)
-
     matches = bf.knnMatch(descriptors1, descriptors2,k=2)
 
     return keypoints1, keypoints2, matches
@@ -83,12 +82,11 @@ def Homography(keypoints1, keypoints2, goodMatches):
     src_pts = np.float32([ keypoints2[m.trainIdx].pt for m in goodMatches]).reshape(-1,1,2)
     M, _ = cv2.findHomography(src_pts, dst_pts, cv2.RHO, 5.0)
     
-    #print M 
     return M
     
 def warpTwoImages(img1, img2, prev_H):
     
-    warpedImage = np.zeros((2000, 2000))
+    warpedImage = np.zeros((3000, 3000))
 
     keypoints1, keypoints2, matches = findMatches(img1, img2)
     goodMatches = findGoodMatches(matches)
@@ -98,54 +96,64 @@ def warpTwoImages(img1, img2, prev_H):
 
     return prev_H, warpedImage
 
+def warpEachSubArray(array):
+
+
+    warpedImages = [None]*len(array)
+
+    offset = [1500, 1000]
+    offsetMatrix = np.array([[1, 0, offset[0]], [0, 1, offset[1]], [0, 0, 1]])
+
+    middle_image = int(math.ceil(len(array)/2))
+    print "middle_image: ", middle_image
+
+    prev_H = offsetMatrix.copy()
+    for i in range(middle_image, 0, -1):
+       prev_H, warpedImage = warpTwoImages(array[i], array[i-1], prev_H)
+       warpedImages[i-1] = warpedImage
+       #cv2.imwrite('/root/Desktop/thesis/' + str(i-1) + '.png', warpedImages[i-1])
+
+    prev_H = offsetMatrix.copy()
+    prev_H, warpedImage = warpTwoImages(array[middle_image], array[middle_image], prev_H)
+    warpedImages[middle_image] = warpedImage
+    #cv2.imwrite('/root/Desktop/thesis/' + str(middle_image) + '.png', warpedImages[middle_image])
+    
+    prev_H = offsetMatrix.copy()
+    for j in range(middle_image+1, len(array)):
+       prev_H, warpedImage = warpTwoImages(array[j-1], array[j], prev_H)
+       warpedImages[j] = warpedImage
+       #cv2.imwrite('/root/Desktop/thesis/' + str(j) + '.png', warpedImages[j])
+
+    
+#    iterator = 0
+#    for i in range(0, len(allWarpedImages)):
+#       for j in range(0, len(allWarpedImages[i])):
+#          cv2.imwrite('/root/Desktop/thesis/' + str(iterator) + '.png', allWarpedImages[i][j])
+#          iterator +=1
+
+    return warpedImages
 
 def main():
    
     global orb, bf
 
-    sub_camera = rospy.Subscriber("/cam0/image_raw", Image, imageCallback,  queue_size=1)
+    sub_camera = rospy.Subscriber("/cam0/image_raw", Image, imageCallback,  queue_size=1000)
     rospy.init_node('stitch_the_images')
 
     orb = cv2.ORB_create(nfeatures = 1500)
     bf = cv2.BFMatcher_create(cv2.NORM_HAMMING)
 
-    allImages = imagePreprocessing()
+    images = imagePreprocessing()
+    warpedImages = warpEachSubArray(images)
+          
 
-    allWarpedImages = [np.zeros((2000, 2000))]* len(allImages)
-
-
-    offset = [1000, 500]
-    offsetMatrix = np.array([[1, 0, offset[0]], [0, 1, offset[1]], [0, 0, 1]])
-
-    middle_image = int(math.ceil(len(allImages)/2))
-    print "middle_image: ", middle_image
-
-    prev_H = offsetMatrix.copy()
-    for i in range(middle_image, 0, -1):
-       prev_H, warpedImage = warpTwoImages(allImages[i], allImages[i-1], prev_H)
-       allWarpedImages[i-1] = warpedImage
-       #cv2.imwrite('/root/Desktop/thesis/' + str(i-1) + '.png', allWarpedImages[i-1])
-
-    prev_H = offsetMatrix.copy()
-    prev_H, warpedImage = warpTwoImages(allImages[middle_image], allImages[middle_image], prev_H)
-    allWarpedImages[middle_image] = warpedImage
-    #cv2.imwrite('/root/Desktop/thesis/' + str(middle_image) + '.png', allWarpedImages[middle_image])
-    
-    prev_H = offsetMatrix.copy()
-    for j in range(middle_image+1, len(allImages)):
-       prev_H, warpedImage = warpTwoImages(allImages[j-1], allImages[j], prev_H)
-       allWarpedImages[j] = warpedImage
-       #cv2.imwrite('/root/Desktop/thesis/' + str(j) + '.png', allWarpedImages[j])
-
-
-    finalImg = allWarpedImages[0]
+    finalImg = warpedImages[0]
     b = Blender() 
-    
-    for index in range(1, len(allWarpedImages)):
-        print('blending', index)
-        finalImg, mask1truth, mask2truth = b.blend(finalImg, allWarpedImages[index])
-        mask1truth = mask1truth + mask2truth
-        cv2.imwrite('/root/Desktop/thesis/FINALBLENDED.png', finalImg)
+
+    for i in range(1, len(warpedImages)):
+       print('blending', i)
+       finalImg, mask1truth, mask2truth = b.blend(finalImg, warpedImages[i])
+       cv2.imwrite('/root/Desktop/thesis' + 'final.png', finalImg)
     
     rospy.spin()
 
