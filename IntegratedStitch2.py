@@ -21,15 +21,22 @@ import rospy
 # Ros Messages
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
+from ccmslam_msgs.msg import Map, MP, Descriptor
+from visualization_msgs.msg import Marker
+from std_msgs.msg import Int8
 
 
 images = []
-
-
+AllKp = []
+AllDesc = []
+AllMsgId = []
+ChosenKeyFrame = []
+ 
+ 
 def imageCallback(image):
     
     global images
-    print ('received image of type: "%s"' % image.encoding)
+    #print ('received image of type: "%s"' % image.encoding)
     
     bridge = CvBridge()
     cv_image = bridge.imgmsg_to_cv2(image, desired_encoding="mono8")
@@ -37,21 +44,43 @@ def imageCallback(image):
     images.append(cv_image)
     
 
+
+def chosenKFCallback (msg):
+
+    ChosenKeyFrame.append(msg.data) 
+
+
+def extractFeatures_0_Callback(message_Map):
+
+    #time.sleep(7)
+    if len(message_Map.Keyframes) != 0:
+       #msgid = message_Map.Keyframes[0].mUniqueId
+       msgid = message_Map.header
+       kp = message_Map.Keyframes[0].mvKeysUn
+       desc = message_Map.Keyframes[0].mDescriptors
+    
+       AllKp.append(kp)
+       AllDesc.append(desc)
+       AllMsgId.append(msgid)
+       #print (kp)
+       #print (msgid)
+
 def imagePreprocessing():
     
     global images
-    time.sleep(15)
+    time.sleep(160)
     
     allImages = []
     print "total raw images: ", len(images)
     
-    extracted = images[600:2700]
+    extracted = images[:]
     dsize = (250, 350)
      
-    for i in range (0, len(extracted), 5):
+    for i in range (0, len(extracted), 2):
        img = cv2.resize(extracted[i], dsize)
        allImages.append(img)
     
+    print ("length of chosenkeyFrame list: ", len(ChosenKeyFrame))
     return allImages
 
 
@@ -60,9 +89,8 @@ def findMatches(img1, img2):
     global orb, bf 
 
     keypoints1, descriptors1 = orb.detectAndCompute(img1, None)
-    #print (type(descriptors1))
     keypoints2, descriptors2 = orb.detectAndCompute(img2, None)
-    matches = bf.knnMatch(descriptors1, descriptors2,k=2)
+    matches = bf.knnMatch(descriptors1, descriptors2, k=2)
 
     return keypoints1, keypoints2, matches
 
@@ -87,7 +115,7 @@ def Homography(keypoints1, keypoints2, goodMatches):
     
 def warpTwoImages(img1, img2, prev_H):
     
-    warpedImage = np.zeros((3000, 3000))
+    warpedImage = np.zeros((3000, 2500))
 
     keypoints1, keypoints2, matches = findMatches(img1, img2)
     goodMatches = findGoodMatches(matches)
@@ -97,12 +125,12 @@ def warpTwoImages(img1, img2, prev_H):
 
     return prev_H, warpedImage
 
-def warpEachSubArray(array):
+def warpEntireArray(array):
 
 
     warpedImages = [None]*len(array)
 
-    offset = [1000, 1200]
+    offset = [1500, 1000]
     offsetMatrix = np.array([[1, 0, offset[0]], [0, 1, offset[1]], [0, 0, 1]])
 
     middle_image = int(math.ceil(len(array)/2))
@@ -139,22 +167,25 @@ def main():
     global orb, bf
 
     sub_camera = rospy.Subscriber("/cam0/image_raw", Image, imageCallback,  queue_size=1000)
+    sub_chosenKF = rospy.Subscriber("/ChosenKeyFrame", Int8, chosenKFCallback,  queue_size=1000)
+    sub_descriptors = rospy.Subscriber("/ccmslam/MapOutClient0", Map,
+    					extractFeatures_0_Callback,  queue_size=1000)
     rospy.init_node('stitch_the_images')
 
     orb = cv2.ORB_create(nfeatures = 1500)
     bf = cv2.BFMatcher_create(cv2.NORM_HAMMING)
 
     images = imagePreprocessing()
-    warpedImages = warpEachSubArray(images)
+#    warpedImages = warpEntireArray(images)
           
 
-    finalImg = warpedImages[0]
-    b = Blender() 
+#    finalImg = warpedImages[0]
+#    b = Blender() 
 
-    for i in range(1, len(warpedImages)):
-       print('blending', i)
-       finalImg, mask1truth, mask2truth = b.blend(finalImg, warpedImages[i])
-       cv2.imwrite('/root/Desktop/thesis' + 'final.png', finalImg)
+#    for i in range(1, len(warpedImages)):
+#       print('blending', i)
+#       finalImg, mask1truth, mask2truth = b.blend(finalImg, warpedImages[i])
+#       cv2.imwrite('/root/Desktop/thesis' + 'final.png', finalImg)
     
     rospy.spin()
 

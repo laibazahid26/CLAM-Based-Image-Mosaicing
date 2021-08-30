@@ -2,8 +2,8 @@
 
 # Python libs
 import time
-from blendingStitchDesktop import Blender
 import math
+from blendingStitch import Blender
 
 # numpy and scipy
 import numpy as np
@@ -14,41 +14,45 @@ import imutils
 # OpenCV
 import cv2
 
+# Ros libraries
+import roslib
+import rospy
+
+# Ros Messages
+from cv_bridge import CvBridge
+from sensor_msgs.msg import Image
+
+
+images = []
+
+
+def imageCallback(image):
+    
+    global images
+    print ('received image of type: "%s"' % image.encoding)
+    
+    bridge = CvBridge()
+    cv_image = bridge.imgmsg_to_cv2(image, desired_encoding="mono8")
+
+    images.append(cv_image)
+    
 
 def imagePreprocessing():
     
-    images = []
+    global images
+    time.sleep(15)
     
-    img1 = cv2.imread("city_01.jpg")
-    img2 = cv2.imread("city_02.jpg")
-    img3 = cv2.imread("city_03.jpg")
-    img4 = cv2.imread("city_04.jpg")
-    img5 = cv2.imread("city_05.jpg")
-    img6 = cv2.imread("city_06.jpg")
-    img7 = cv2.imread("city_07.jpg")
-    img8 = cv2.imread("city_08.jpg")
-
-    dsize = (300,300)
-
-    img1 = cv2.resize(img1, dsize)
-    img2 = cv2.resize(img2, dsize)
-    img3 = cv2.resize(img3, dsize)
-    img4 = cv2.resize(img4, dsize)
-    img5 = cv2.resize(img5, dsize)
-    img6 = cv2.resize(img6, dsize)
-    img7 = cv2.resize(img7, dsize)
-    img8 = cv2.resize(img8, dsize)
-   
-    images.append(img1)
-    images.append(img2)
-    images.append(img3)
-    images.append(img4)
-    images.append(img5)
-    images.append(img6)
-    images.append(img7)
-    images.append(img8)
-
-    return images
+    allImages = []
+    print "total raw images: ", len(images)
+    
+    extracted = images[600:2500]
+    dsize = (250, 350)
+     
+    for i in range (0, len(extracted), 2):
+       img = cv2.resize(extracted[i], dsize)
+       allImages.append(img)
+    
+    return allImages
 
 
 def findMatches(img1, img2):
@@ -57,7 +61,10 @@ def findMatches(img1, img2):
 
     keypoints1, descriptors1 = orb.detectAndCompute(img1, None)
     keypoints2, descriptors2 = orb.detectAndCompute(img2, None)
-    matches = bf.knnMatch(descriptors1, descriptors2, k=2)
+    matches = bf.knnMatch(descriptors1, descriptors2,k=2)
+    #print ("keypoints1: ", keypoints1)
+    #time.sleep(7)
+    #print ("descriptors1: ", descriptors1)
 
     return keypoints1, keypoints2, matches
 
@@ -70,23 +77,24 @@ def findGoodMatches(matches):
           good.append(m)
 
     return good
- 
+
 
 def Homography(keypoints1, keypoints2, goodMatches):
 
-    dst_pts = np.float32([keypoints1[m.queryIdx].pt for m in goodMatches]).reshape(-1,1,2)
-    src_pts = np.float32([keypoints2[m.trainIdx].pt for m in goodMatches]).reshape(-1,1,2)
-    H, _ = cv2.findHomography(src_pts, dst_pts, cv2.RHO, 5.0)
-
-    return H
+    dst_pts = np.float32([ keypoints1[m.queryIdx].pt for m in goodMatches]).reshape(-1,1,2)
+    src_pts = np.float32([ keypoints2[m.trainIdx].pt for m in goodMatches]).reshape(-1,1,2)
+    M, _ = cv2.findHomography(src_pts, dst_pts, cv2.RHO, 5.0)
     
-
+    return M
+    
 def warpTwoImages(img1, img2, prev_H):
     
-    warpedImage = np.zeros((3000, 3000, 3))
+    warpedImage = np.zeros((3000, 2500))
+
     keypoints1, keypoints2, matches = findMatches(img1, img2)
     goodMatches = findGoodMatches(matches)
     H = Homography(keypoints1, keypoints2, goodMatches)
+    print H
     prev_H = np.dot(prev_H, H)
     warpedImage = cv2.warpPerspective(img2, prev_H, (warpedImage.shape[1], warpedImage.shape[0]))
 
@@ -94,15 +102,14 @@ def warpTwoImages(img1, img2, prev_H):
 
 def warpEachSubArray(array):
 
-    global allWarpedImages
 
     warpedImages = [None]*len(array)
 
-    offset = [1000, 500]
+    offset = [1500, 1000]
     offsetMatrix = np.array([[1, 0, offset[0]], [0, 1, offset[1]], [0, 0, 1]])
 
     middle_image = int(math.ceil(len(array)/2))
-    print("middle_image: ", middle_image)
+    print "middle_image: ", middle_image
 
     prev_H = offsetMatrix.copy()
     for i in range(middle_image, 0, -1):
@@ -121,7 +128,6 @@ def warpEachSubArray(array):
        warpedImages[j] = warpedImage
        #cv2.imwrite('/root/Desktop/thesis/' + str(j) + '.png', warpedImages[j])
 
-    print("length of warped images: ", len(warpedImages))
     
 #    iterator = 0
 #    for i in range(0, len(allWarpedImages)):
@@ -134,22 +140,28 @@ def warpEachSubArray(array):
 def main():
    
     global orb, bf
-    
-    orb = cv2.ORB_create(nfeatures = 1500)
+
+    sub_camera = rospy.Subscriber("/cam0/image_raw", Image, imageCallback,  queue_size=1000)
+    rospy.init_node('stitch_the_images')
+
+    orb = cv2.ORB_create(nfeatures = 1000)
     bf = cv2.BFMatcher_create(cv2.NORM_HAMMING)
-   
+
     images = imagePreprocessing()
     warpedImages = warpEachSubArray(images)
+          
 
     finalImg = warpedImages[0]
-    b = Blender() 
+#    b = Blender() 
+
+#    for i in range(1, len(warpedImages)):
+#       print('blending', i)
+#       finalImg, mask1truth, mask2truth = b.blend(finalImg, warpedImages[i])
+#       cv2.imwrite('/root/Desktop/thesis' + 'final.png', finalImg)
     
-    for i in range(1, len(warpedImages)):
-       print('blending', i)
-       finalImg, mask1truth, mask2truth = b.blend(finalImg, warpedImages[i])
-       cv2.imwrite('/root/Desktop/thesis' + 'final.png', finalImg)
-       
+    rospy.spin()
+
 
 if __name__ == '__main__':
     main()
-    	
+
