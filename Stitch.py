@@ -40,12 +40,12 @@ def imageCallback(image):
 def imagePreprocessing():
     
     global images
-    time.sleep(15)
+    time.sleep(20)
     
     allImages = []
     print "total raw images: ", len(images)
     
-    extracted = images[600:2700]
+    extracted = images[600:2500]
     dsize = (250, 350)
      
     for i in range (0, len(extracted), 5):
@@ -60,7 +60,6 @@ def findMatches(img1, img2):
     global orb, bf 
 
     keypoints1, descriptors1 = orb.detectAndCompute(img1, None)
-    #print (type(descriptors1))
     keypoints2, descriptors2 = orb.detectAndCompute(img2, None)
     matches = bf.knnMatch(descriptors1, descriptors2,k=2)
 
@@ -81,9 +80,27 @@ def Homography(keypoints1, keypoints2, goodMatches):
 
     dst_pts = np.float32([ keypoints1[m.queryIdx].pt for m in goodMatches]).reshape(-1,1,2)
     src_pts = np.float32([ keypoints2[m.trainIdx].pt for m in goodMatches]).reshape(-1,1,2)
-    M, _ = cv2.findHomography(src_pts, dst_pts, cv2.RHO, 5.0)
+    H, mask1 = cv2.findHomography(src_pts, dst_pts, cv2.RHO, 5.0)
+#    F, mask2 = cv2.findFundamentalMat(src_pts, dst_pts, cv2.RHO, 5.0)
     
-    return M
+#    arrayH = np.array(mask1)
+#    arrayF = np.array(mask2)
+    
+#    scoreH = (arrayH == 1).sum()
+#    scoreF = (arrayF == 1).sum()
+    
+#    ratio = scoreH/(scoreH + scoreF);
+#    ratioThreshold = 0.45;
+    
+#    if ratio > ratioThreshold:
+#       tform = H
+#       print "more score homography"
+#    else:
+#       tform = F
+#       print "more score fundamental"
+    
+#    return tform
+    return H
     
 def warpTwoImages(img1, img2, prev_H):
     
@@ -139,6 +156,7 @@ def main():
     global orb, bf
 
     sub_camera = rospy.Subscriber("/cam0/image_raw", Image, imageCallback,  queue_size=1000)
+    #sub_camera = rospy.Subscriber("/camera/mydataset/images", Image, imageCallback,  queue_size=1000)
     rospy.init_node('stitch_the_images')
 
     orb = cv2.ORB_create(nfeatures = 1500)
@@ -147,7 +165,6 @@ def main():
     images = imagePreprocessing()
     warpedImages = warpEachSubArray(images)
           
-
     finalImg = warpedImages[0]
     b = Blender() 
 
