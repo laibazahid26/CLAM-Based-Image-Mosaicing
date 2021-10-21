@@ -1,23 +1,39 @@
-# VisualColaborativeMapping
+# CLAM Based Image Mosaicing
 
+### The aim 
+The aim of this work is to build a 2D map of the site or a mosaic of an unknown environment. This work is targeted at a search and rescue mission. This aim is accomplished by integrating this work with the CCM-SLAM system[1]. Even though the 3D map produced by CCM-SLAM is useful for the robot to perform autonomous navigation, but humans might face difficulties to understand this 3D map and it does not provide a lot of information to the human eye, even if the map is dense or semi-dense. 
+<br />
+<br />
+Human responders, at an earthquake site, search for human lives randomly, and it is possible that some life exists in a nearby area where human responders are currently searching and there are chances that that life will be lost due to delay in rescue.
+<br />
+<r />
+Si<br />
+<br />nce time is of crucial importance in any search and rescue mission, a more accustomed view of the human eyes will definitely help make important decisions in less time. 
+<br />
+<br />
+The aim of this work is to use features, extracted by the CCM-SLAM system using the sensors of various UAVs involved in the mission, and reconstruct a clear mosaic of the large environment with respect to the drone positions.  
+<br />
+<br />
 I have uploaded two py files. One is called StitchDesktop.py and the other is called Stitch.py. The former one is for the testing purposes. I have used a set of 8 different pictures of the city for testing my algorithm and checking the result of algorithm on this set of pictures.
 <br />
 <br />
 Whereas, the second py file, 'Stitch.py' uses the rosbag data to build a panorama. 
+<br />
+<br />
 
 ###  Running Instructions
-It is suggested to run first StitchDesktop.py file for having a look at the code and analyzing the problems in the resultant panaorama. This file can simply be run by typing: <br />
-`./StitchDesktop.py`
+1. Download and Install Ubuntu or Docker. 
+2. Install and build the CCM-SLAM system by carefully following the instructions given
+on the readme file of the following github repository.
+https://github.com/VIS4ROB-lab/ccm_slam
+3. Download the file name IntegratedStitch.py from the following repository.
+https://github.com/laibazahid26/CLAM-Based-Image-Mosaicing/tree/master
+4. Make a folder named scripts inside the src folder of ccm-slam package and paste the
+IntegratedStitch.py file in that folder.
+5. Launch the rosbag, servers and the clients as described in the readme file of step 2.
+6. launch the IntegratedStitch.py file by going inside the directory where this file is placed
+from terminal and typing:
+python2 IntegratedStitch.py
 
-For running the second py file below are the steps: <br />
-First download the rosbag named 'Machine Hall 01' from the link below: <br />
-https://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets
-
-In one terminal type: <br />
-`./Stitch.py`
-
-Open second terminal and type: <br />
-`rosbag play MH_01_easy.bag --start 45`
-
-Stop the rosbag by pressing ctrl-C after 20 to 25 seconds (because we are testing only). <br />
-Also, one important thing is that I am having memory issues in my code (Stitch.py), if I run it for more than 50 images. 
+### References
+[1]. https://github.com/VIS4ROB-lab/ccm_slam
