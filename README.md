@@ -6,20 +6,19 @@ The aim of this work is to build a 2D map of the site or a mosaic of an unknown 
 <br />
 Human responders, at an earthquake site, search for human lives randomly, and it is possible that some life exists in a nearby area where human responders are currently searching and there are chances that that life will be lost due to delay in rescue.
 <br />
-<r />
-Si<br />
-<br />nce time is of crucial importance in any search and rescue mission, a more accustomed view of the human eyes will definitely help make important decisions in less time. 
+<br />
+Since time is of crucial importance in any search and rescue mission, a more accustomed view of the human eyes will definitely help make important decisions in less time. 
 <br />
 <br />
-The aim of this work is to use features, extracted by the CCM-SLAM system using the sensors of various UAVs involved in the mission, and reconstruct a clear mosaic of the large environment with respect to the drone positions.  
-<br />
+The aim of this work is to use features, extracted by the CCM-SLAM system using the sensors of various UAVs involved in the mission, and reconstruct a clear mosaic of the large environment with respect to the drone positions.
 <br />
 I have uploaded two py files. One is called StitchDesktop.py and the other is called Stitch.py. The former one is for the testing purposes. I have used a set of 8 different pictures of the city for testing my algorithm and checking the result of algorithm on this set of pictures.
 <br />
 <br />
-Whereas, the second py file, 'Stitch.py' uses the rosbag data to build a panorama. 
+Whereas, the second py file, 'Stitch.py' uses the rosbag data to build a panorama. This file extracts the features on its own instead of taking it from CCM-SLAM system.
 <br />
 <br />
+Finally, the third py file, 'IntegratedStitch.py' can be run to see the working of the whole system. The steps for ruuning this file are given below. 
 
 ###  Running Instructions
 1. Download and Install Ubuntu or Docker. 
