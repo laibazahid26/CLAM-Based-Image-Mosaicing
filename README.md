@@ -24,6 +24,8 @@ Finally, the third py file, 'IntegratedStitch.py' can be run to see the working 
 The image blending module has been taken from the reference[2] provided below. For visualizing the bleneded image in rviz please refer to work done in refernce[3]. This
 package lets me view the mosaic by building a customised plugin to be used in rviz. This customised plugin converts the images into meshes so that they could be visualized on the rviz grid as a marker. I exported this plugin into the rviz of CCM-SLAM. The results could be seen below:  
 
+![alt text](https://github.com/laibazahid26/FinalAssignment_expRob/blob/master/architecture.png?raw=true)
+
 ###  Running Instructions
 1. Download and Install Ubuntu or Docker. 
 2. Install and build the CCM-SLAM system by carefully following the instructions given
